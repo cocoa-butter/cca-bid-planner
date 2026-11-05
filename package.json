@@ -52,6 +52,7 @@
     "dev:site": "npm run build:site && npx --yes serve site-dist"
   },
   "dependencies": {
+    "@vercel/speed-insights": "^2.0.0",
     "viem": "2.57.16"
   },
   "devDependencies": {

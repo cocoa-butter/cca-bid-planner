@@ -3,6 +3,7 @@
  * /api/uniswap proxy), reads the chosen auction read-only over a public RPC, and runs the
  * pure core. No keys, no transactions.
  */
+import { injectSpeedInsights } from '@vercel/speed-insights';
 import { getAddress, type PublicClient } from 'viem';
 import { CHAINS, type ChainInfo, chainById, findChain } from '../chains.js';
 import { inspect } from '../core/inspect.js';
@@ -518,6 +519,9 @@ function backToList() {
 }
 
 function init() {
+  // Initialize Vercel Speed Insights
+  injectSpeedInsights();
+
   const q = new URLSearchParams(location.search);
   const chain = findChain(q.get('chain') ?? DEFAULT_CHAIN);
   if (chain) state.chain = chain;
