@@ -7,12 +7,17 @@ Requires Node 22 or later.
 ```sh
 npm ci
 npm test
-npm run build
+npm run build        # library and CLI into dist/
+npm run dev:site     # website into site-dist/, served locally
 ```
+
+The website is static. `scripts/build-site.mjs` renders it from `site/` and the Markdown
+in `docs/`, and Vercel deploys it on every push to `main` (see `vercel.json`).
 
 ## Before opening a pull request
 
-- `npm run lint`, `npm run typecheck`, `npm test` and `npm run build` must pass.
+- `npm run lint`, `npm run typecheck`, `npm test` and `npm run build:site` must pass.
+- Add user-facing changes to `CHANGELOG.md` under "Unreleased".
 - Keep `src/core/` free of I/O. Network, file and DOM code belongs in `src/rpc/`,
   `src/cli/` and `src/ui/`.
 - Use `bigint` for every on-chain quantity. No floating point in the core.

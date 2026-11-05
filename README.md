@@ -2,6 +2,8 @@
 
 Read-only bid planner for Uniswap Continuous Clearing Auctions (CCA). Give it an auction, a budget and a demand assumption, and it returns a bid schedule, with expected fill, average price, worst case and refund exposure for each scenario.
 
+**Website and planner: [cca-bid-planner.vercel.app](https://cca-bid-planner.vercel.app)** · [Docs](https://cca-bid-planner.vercel.app/docs) · [Changelog](CHANGELOG.md)
+
 [![ci](https://github.com/cocoa-butter/cca-bid-planner/actions/workflows/ci.yml/badge.svg)](https://github.com/cocoa-butter/cca-bid-planner/actions/workflows/ci.yml)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![node](https://img.shields.io/badge/node-%3E%3D22-brightgreen)
@@ -115,9 +117,17 @@ cca-bid-planner plan --snapshot slop.json --budget 25000 --max-price 0.02196 --j
 cca-bid-planner calldata --snapshot slop.json --schedule plan.json --owner 0xYourAddress
 ```
 
-### Demo page
+### Website
 
-`npm run build` writes a static page to `dist/demo/`. Serve it with any static server and paste a snapshot from `inspect --save`. Query parameters prefill the form, for example `?budget=40000&maxPrice=0.018&weighting=top&demand=300000`.
+[cca-bid-planner.vercel.app/app](https://cca-bid-planner.vercel.app/app) runs the same planner in your browser. It reads an auction directly from a public RPC, so nothing goes through a server. You can also paste a snapshot from `inspect --save`.
+
+The query string holds the inputs, so a plan can be shared as a link:
+
+```
+/app?chain=8453&auction=0x...&budget=40000&maxPrice=0.018&demand=300000
+```
+
+Build and preview the site locally with `npm run dev:site`.
 
 ### Library
 
@@ -183,6 +193,10 @@ What this project adds:
 - the CLI and the demo page
 
 This project is not affiliated with or endorsed by Uniswap Labs. See [NOTICE](NOTICE) and [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+## Contributing
+
+Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md). Report security issues privately, as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
