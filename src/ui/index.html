@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>cca-bid-planner demo</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --fg: #1b1f24;
+        --muted: #59636e;
+        --bg: #ffffff;
+        --panel: #f6f8fa;
+        --line: #d1d9e0;
+        --accent: #0969da;
+        --warn: #9a6700;
+        --bad: #d1242f;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fg: #e6edf3;
+          --muted: #9198a1;
+          --bg: #0d1117;
+          --panel: #151b23;
+          --line: #3d444d;
+          --accent: #4493f8;
+          --warn: #d29922;
+          --bad: #f85149;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: var(--fg);
+        background: var(--bg);
+      }
+      header { padding: 16px 24px; border-bottom: 1px solid var(--line); }
+      header h1 { margin: 0; font-size: 18px; }
+      header p { margin: 4px 0 0; color: var(--muted); }
+      main { display: grid; grid-template-columns: 360px 1fr; gap: 24px; padding: 24px; }
+      @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+      aside { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; align-self: start; }
+      label { display: block; margin: 10px 0 4px; font-weight: 600; }
+      label small { font-weight: 400; color: var(--muted); }
+      input, select, textarea {
+        width: 100%; padding: 6px 8px; font: inherit; color: var(--fg);
+        background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+      }
+      textarea { height: 160px; font: 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+      button {
+        margin-top: 14px; padding: 7px 14px; font: inherit; font-weight: 600; cursor: pointer;
+        color: #fff; background: var(--accent); border: 0; border-radius: 6px;
+      }
+      button.secondary { color: var(--fg); background: transparent; border: 1px solid var(--line); }
+      h2 { font-size: 16px; margin: 24px 0 8px; }
+      h2:first-child { margin-top: 0; }
+      h3 { font-size: 14px; margin: 16px 0 6px; }
+      table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+      th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+      th { color: var(--muted); font-weight: 600; }
+      .asm { font-size: 11px; font-weight: 600; color: var(--warn); border: 1px solid var(--warn); border-radius: 10px; padding: 1px 7px; vertical-align: middle; }
+      .warn li { color: var(--warn); }
+      .bad, #err { color: var(--bad); }
+      #out { overflow-x: auto; }
+      footer { padding: 0 24px 24px; color: var(--muted); font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>cca-bid-planner</h1>
+      <p>Bid schedules for Uniswap Continuous Clearing Auctions. Runs locally in your browser. Never signs anything.</p>
+    </header>
+    <main>
+      <aside>
+        <label for="snapshot">Snapshot <small>(from <code>inspect --save</code>; prefilled with a synthetic example)</small></label>
+        <textarea id="snapshot" spellcheck="false"></textarea>
+        <div class="row">
+          <div>
+            <label for="budget">Budget</label>
+            <input id="budget" value="25000" inputmode="decimal" />
+          </div>
+          <div>
+            <label for="maxPrice">Max price</label>
+            <input id="maxPrice" value="0.02196" inputmode="decimal" />
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label for="levels">Price levels</label>
+            <input id="levels" value="5" inputmode="numeric" />
+          </div>
+          <div>
+            <label for="weighting">Weighting</label>
+            <select id="weighting">
+              <option value="auto">auto</option>
+              <option value="flat">flat</option>
+              <option value="top">top</option>
+              <option value="bottom">bottom</option>
+            </select>
+          </div>
+        </div>
+        <label for="demand">Assumed external demand <small>(currency; blank = enough to reach your cap)</small></label>
+        <input id="demand" placeholder="e.g. 300000" inputmode="decimal" />
+        <label for="arrival">Demand arrival</label>
+        <select id="arrival">
+          <option value="flat">flat</option>
+          <option value="early">early</option>
+          <option value="late">late</option>
+        </select>
+        <button id="run" type="button">Plan</button>
+        <button id="reset" type="button" class="secondary">Reset example</button>
+        <p id="err"></p>
+      </aside>
+      <section id="out"></section>
+    </main>
+    <footer>
+      Figures are labelled <b>observed</b> (read from chain), <b>derived</b> (protocol math) or <b>assumed</b>
+      (depends on the demand forecast, which is always an assumption). Not affiliated with or endorsed by Uniswap Labs.
+    </footer>
+    <script type="module" src="./planner.js"></script>
+  </body>
+</html>

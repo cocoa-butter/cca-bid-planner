@@ -10,7 +10,8 @@ export default defineConfig([
     format: ['esm'],
     target: 'node22',
     platform: 'node',
-    dts: { entry: { index: 'src/index.ts', 'core/index': 'src/core/index.ts' } },
+    // Declarations come from tsc (tsconfig.build.json): TypeScript 7 has no compiler API for rollup-plugin-dts.
+    dts: false,
     sourcemap: true,
     clean: true,
     splitting: true,

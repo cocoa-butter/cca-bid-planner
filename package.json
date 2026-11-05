@@ -39,7 +39,7 @@
     "planner"
   ],
   "scripts": {
-    "build": "tsup && node scripts/build-demo.mjs",
+    "build": "tsup && tsc -p tsconfig.build.json && node scripts/build-demo.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
