@@ -46,7 +46,8 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "abi:extract": "node scripts/extract-abi.mjs",
-    "smoke": "node dist/cli/bin.js --help"
+    "smoke": "node dist/cli/bin.js --help",
+    "prepare": "npm run build"
   },
   "dependencies": {
     "viem": "2.57.16"
@@ -58,5 +59,14 @@
     "tsup": "9.0.0",
     "typescript": "7.0.2",
     "vitest": "5.1.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cocoa-butter/cca-bid-planner.git"
+  },
+  "homepage": "https://github.com/cocoa-butter/cca-bid-planner#readme",
+  "bugs": {
+    "url": "https://github.com/cocoa-butter/cca-bid-planner/issues"
+  },
+  "author": "cocoa-butter"
 }
