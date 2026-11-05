@@ -21,6 +21,7 @@ export default defineConfig([
     format: ['esm'],
     target: 'es2022',
     platform: 'browser',
+    splitting: false,
     minify: true,
     sourcemap: false,
     noExternal: [/.*/],
