@@ -1,0 +1,79 @@
+<!-- title: Planner: cca-bid-planner -->
+<!-- description: Plan a bid ladder for a Uniswap CCA auction in your browser. Loads auctions read-only over public RPC. -->
+<div class="wrap">
+  <div class="app">
+    <div>
+      <div class="panel">
+        <h3>1. Auction</h3>
+        <div class="tabs" role="tablist">
+          <button type="button" id="tab-rpc" class="on" role="tab">Load from chain</button>
+          <button type="button" id="tab-paste" role="tab">Paste snapshot</button>
+        </div>
+        <div id="src-rpc">
+          <div class="field">
+            <label for="chain">Chain</label>
+            <select id="chain">
+              <option value="1">Ethereum</option>
+              <option value="8453">Base</option>
+              <option value="130">Unichain</option>
+              <option value="42161">Arbitrum One</option>
+              <option value="custom">Custom RPC</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="rpc">RPC URL <small>(read-only calls only)</small></label>
+            <input id="rpc" spellcheck="false" />
+          </div>
+          <div class="field">
+            <label for="auction">Auction address</label>
+            <input id="auction" placeholder="0x..." spellcheck="false" />
+          </div>
+          <div class="field">
+            <label for="requiredRaise">Minimum raise <small>(raw units; optional, read from factory logs when blank)</small></label>
+            <input id="requiredRaise" inputmode="numeric" />
+          </div>
+          <button class="btn btn-primary btn-sm" id="load" type="button" style="margin-top:12px">Load auction</button>
+        </div>
+        <div id="src-paste" hidden>
+          <div class="field">
+            <label for="snapshot">Snapshot JSON <small>(from <code>inspect --save</code>)</small></label>
+            <textarea id="snapshot" spellcheck="false"></textarea>
+          </div>
+          <button class="btn btn-ghost btn-sm" id="example" type="button" style="margin-top:10px">Use synthetic example</button>
+        </div>
+        <div class="status" id="status"></div>
+      </div>
+
+      <div class="panel">
+        <h3>2. Your bid</h3>
+        <div class="row2">
+          <div class="field"><label for="budget">Budget</label><input id="budget" value="25000" inputmode="decimal" /></div>
+          <div class="field"><label for="maxPrice">Max price</label><input id="maxPrice" value="0.02196" inputmode="decimal" /></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label for="levels">Price levels</label><input id="levels" value="5" inputmode="numeric" /></div>
+          <div class="field">
+            <label for="weighting">Weighting</label>
+            <select id="weighting"><option>auto</option><option>flat</option><option>top</option><option>bottom</option></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>3. Demand assumption <span class="tag asm">assumed</span></h3>
+        <div class="field">
+          <label for="demand">External demand <small>(currency; blank = enough to reach your cap)</small></label>
+          <input id="demand" placeholder="e.g. 300000" inputmode="decimal" />
+        </div>
+        <div class="field">
+          <label for="arrival">Arrival</label>
+          <select id="arrival"><option>flat</option><option>early</option><option>late</option></select>
+        </div>
+        <button class="btn btn-primary" id="run" type="button" style="margin-top:14px">Plan</button>
+        <p id="err" class="status err"></p>
+      </div>
+    </div>
+    <section class="out" id="out" aria-live="polite"></section>
+  </div>
+</div>
+<script type="module" src="/app/planner.js"></script>

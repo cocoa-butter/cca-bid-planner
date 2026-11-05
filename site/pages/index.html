@@ -1,0 +1,113 @@
+<!-- title: cca-bid-planner: bid schedules for Uniswap Continuous Clearing Auctions -->
+<!-- description: Read-only planner for Uniswap CCA auctions. Ladder a budget across prices, simulate fills under demand scenarios, and emit submitBid calldata. Never signs. -->
+<section class="hero">
+  <div class="wrap">
+    <span class="eyebrow">Open source &middot; MIT &middot; read-only</span>
+    <h1>Bid on Uniswap CCA auctions <span class="grad">without overpaying</span></h1>
+    <p class="lead">
+      Give it an auction, a budget and a demand assumption. Get back a bid ladder, with the
+      expected fill, average price, worst case and refund for every scenario. It never holds keys.
+    </p>
+    <div class="ctas">
+      <a class="btn btn-primary" href="/app">Open the planner</a>
+      <a class="btn btn-ghost" href="/docs">Read the docs</a>
+      <a class="btn btn-ghost" href="{{repo}}">GitHub</a>
+    </div>
+    <div class="install">
+<pre><code>npx github:cocoa-butter/cca-bid-planner plan \
+  --auction 0x... --rpc https://ethereum-rpc.publicnode.com \
+  --budget 25000 --max-price 0.02</code></pre>
+    </div>
+    <div class="shot"><img src="/assets/demo.gif" alt="The planner switching between flat, top-weighted and bottom-weighted bid ladders" width="960" height="640" /></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>Why a planner?</h2>
+    <p class="sub">
+      A Continuous Clearing Auction is a uniform-price auction run block by block. The obvious
+      move, one bid at your maximum, gets outbid the moment demand passes your cap and tells you
+      nothing about your refund. The right ladder depends on how much demand you expect behind
+      you, and nobody publishes that number.
+    </p>
+    <div class="grid grid-3">
+      <div class="card"><div class="icon">&#x1F4C8;</div><h3>Ladder, don't guess</h3><p>Splits your budget across tick prices between the current clearing price and your cap. Weighting is flat, top-heavy or bottom-heavy.</p></div>
+      <div class="card"><div class="icon">&#x1F9EA;</div><h3>Simulate the outcome</h3><p>Replays your ladder against demand scenarios: tokens, spend, average price, refund, final clearing, and whether the auction graduates.</p></div>
+      <div class="card"><div class="icon">&#x1F6E1;&#xFE0F;</div><h3>Check the auction first</h3><p>A risk report covers impossible minimum raises, gas-hostile tick spacing, a thin final block, validation hooks and low-decimal tokens.</p></div>
+      <div class="card"><div class="icon">&#x1F9FE;</div><h3>Ready calldata</h3><p>Emits <code>submitBid</code> calls with correct <code>prevTickPrice</code> hints, plus Permit2 or <code>msg.value</code> notes. You sign with your own wallet.</p></div>
+      <div class="card"><div class="icon">&#x1F50D;</div><h3>Every number labelled</h3><p>Each figure is marked observed on chain, derived with protocol math, or assumed. The demand forecast is always marked assumed.</p></div>
+      <div class="card"><div class="icon">&#x1F4E6;</div><h3>CLI, library, web</h3><p>The same pure TypeScript core runs in the terminal, in your code and in this browser. viem is the only dependency.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>Exact to the wei</h2>
+    <p class="sub">
+      The simulator is an integer port of the contract's checkpoint, clearing-price and fill
+      accounting. A differential test replays random auctions on the real
+      <code>ContinuousClearingAuction</code> v2.1.0 with Foundry and compares every result.
+    </p>
+    <div class="stats">
+      <div class="stat"><b>300</b><span>random auctions replayed on the real contract</span></div>
+      <div class="stat"><b>2,405</b><span>bids, including outbid and partially filled ones</span></div>
+      <div class="stat"><b>0 wei</b><span>difference in fills, refunds and clearing prices</span></div>
+      <div class="stat"><b>v2.1.0</b><span>pinned upstream release (<code>a56d422</code>)</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap grid grid-2" style="align-items:start">
+    <div>
+      <h2>How it works</h2>
+      <ol class="steps">
+        <li><b>Read.</b> Loads parameters, the supply schedule, live ticks and the minimum raise over plain JSON-RPC. It simulates <code>checkpoint()</code> so state is current.</li>
+        <li><b>Ladder.</b> Picks up to <i>n</i> tick prices strictly above clearing and up to your cap, then splits the budget exactly.</li>
+        <li><b>Assume.</b> You state how much currency other bidders add, and when. By default that is the demand needed to lift clearing to your cap, tested at 0, ½, 1 and 2 times.</li>
+        <li><b>Simulate.</b> Every scenario runs through the exact engine to the end block, then settles each bid the way <code>exitBid</code> would.</li>
+        <li><b>Act.</b> Export calldata, or rerun as the auction moves.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Labels you can trust</h2>
+      <p class="sub" style="margin-bottom:12px">Nothing is presented as more certain than it is.</p>
+      <div class="labels" style="margin-bottom:14px">
+        <span class="tag obs">observed</span><span class="tag der">derived</span><span class="tag asm">assumed</span>
+      </div>
+<pre><code>[obs] floor price                       0.00889 USDC/SLOP
+[der] clearing price (checkpointed now) 0.00889 USDC/SLOP
+[asm] expected average price (base)     0.01341919 USDC/SLOP
+[asm] max refund exposure               25,000 USDC</code></pre>
+      <p class="callout">This is a scenario calculator, not a price oracle. Auctions can fail to graduate, and exits are restricted until they do.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>Get started</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3>Command line</h3>
+<pre><code>npm install -g github:cocoa-butter/cca-bid-planner
+cca-bid-planner inspect --auction 0x... --rpc $RPC --save a.json
+cca-bid-planner plan --snapshot a.json --budget 25000 --max-price 0.02</code></pre>
+        <p><a href="/docs/cli">CLI reference &rarr;</a></p>
+      </div>
+      <div class="card">
+        <h3>Library</h3>
+<pre><code>import { readSnapshot, clientFor, plan, toPriceQ96, toRaw } from 'cca-bid-planner';
+
+const { snapshot } = await readSnapshot(clientFor(rpc), auction);
+const result = plan(snapshot, {
+  budget: toRaw('25000', snapshot.currency.decimals),
+  maxPrice: toPriceQ96('0.02', snapshot.token.decimals, snapshot.currency.decimals),
+});</code></pre>
+        <p><a href="/docs/library">Library guide &rarr;</a></p>
+      </div>
+    </div>
+  </div>
+</section>
