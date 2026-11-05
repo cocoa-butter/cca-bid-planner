@@ -8,7 +8,14 @@
  * upstream checkout with `forge test`, and every outcome is compared to the wei.
  */
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { MPS, maxBidPrice } from '../src/core/constants.js';
@@ -128,7 +135,8 @@ function runEngine(c: Case) {
 
 describe.skipIf(!upstream)('differential vs upstream contract', () => {
   it(`matches the contract to the wei on ${CASES} random cases`, { timeout: 600_000 }, () => {
-    const root = upstream as string;
+    // Foundry checks fs permissions on canonical paths (/tmp is a symlink on macOS).
+    const root = realpathSync(upstream as string);
     const dir = join(root, '.forge-snapshots', 'diff');
     rmSync(dir, { recursive: true, force: true });
     mkdirSync(dir, { recursive: true });
@@ -152,7 +160,7 @@ describe.skipIf(!upstream)('differential vs upstream contract', () => {
       };
       writeFileSync(join(dir, `case-${i}.json`), JSON.stringify(json));
     });
-    execFileSync('forge', ['test', '--match-contract', 'DiffTest', '-q'], {
+    execFileSync('forge', ['test', '--match-contract', '^DiffTest$', '-q'], {
       cwd: root,
       env: { ...process.env, CCA_DIFF_IN: dir, CCA_DIFF_CASES: String(CASES) },
       stdio: 'pipe',
