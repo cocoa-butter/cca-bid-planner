@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createHash } from 'node:crypto';
 // Build the website into site-dist/: landing page, planner app and docs rendered from the
 // Markdown in this repo. Expects `npm run build` to have produced dist/demo/planner.js.
 import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -192,8 +193,13 @@ function page(file) {
 
 // Landing and app
 write('index.html', layout({ ...page('index.html'), path: '/' }));
-write('app/index.html', layout({ ...page('app.html'), path: '/app' }));
-copyFileSync(bundle, join(out, 'app', 'planner.js'));
+// Content-hashed bundle name so a new deploy never runs against a cached old script.
+const bundleHash = createHash('sha256').update(readFileSync(bundle)).digest('hex').slice(0, 10);
+const bundleName = `planner.${bundleHash}.js`;
+const appPage = page('app.html');
+appPage.body = appPage.body.replace('/app/planner.js', `/app/${bundleName}`);
+write('app/index.html', layout({ ...appPage, path: '/app' }));
+copyFileSync(bundle, join(out, 'app', bundleName));
 
 // Docs
 const groups = [...new Set(DOCS.map((d) => d.group))];
