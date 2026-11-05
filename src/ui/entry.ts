@@ -5,7 +5,7 @@
 import { inspect } from '../core/inspect.js';
 import type { Figure } from '../core/label.js';
 import { plan } from '../core/plan.js';
-import { fromPriceQ96, fromRaw, toPriceQ96, toRaw } from '../core/price.js';
+import { formatPriceQ96, fromRaw, toPriceQ96, toRaw } from '../core/price.js';
 import type { Arrival } from '../core/scenario.js';
 import type { Weighting } from '../core/schedule.js';
 import { type AuctionSnapshot, snapshotFromJson, snapshotToJson } from '../core/snapshot.js';
@@ -17,7 +17,7 @@ function fmt(s: AuctionSnapshot) {
   const t = s.token;
   const c = s.currency;
   return {
-    price: (q: bigint) => `${fromPriceQ96(q, t.decimals, c.decimals, 6)} ${c.symbol}`,
+    price: (q: bigint) => `${formatPriceQ96(q, t.decimals, c.decimals, 6)} ${c.symbol}`,
     cur: (r: bigint) => `${group(fromRaw(r, c.decimals, 2))} ${c.symbol}`,
     tok: (r: bigint) => `${group(fromRaw(r, t.decimals, 0))} ${t.symbol}`,
   };

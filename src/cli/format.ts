@@ -1,5 +1,5 @@
 import type { Figure } from '../core/label.js';
-import { fromPriceQ96, fromRaw } from '../core/price.js';
+import { formatPriceQ96, fromRaw } from '../core/price.js';
 import type { AuctionSnapshot } from '../core/snapshot.js';
 
 const TAG: Record<Figure['kind'], string> = {
@@ -25,7 +25,7 @@ export function unitsOf(s: AuctionSnapshot): Units {
 }
 
 export function price(q96: bigint, u: Units): string {
-  return `${fromPriceQ96(q96, u.tokenDecimals, u.currencyDecimals, 8)} ${u.currencySymbol}/${u.tokenSymbol}`;
+  return `${formatPriceQ96(q96, u.tokenDecimals, u.currencyDecimals)} ${u.currencySymbol}/${u.tokenSymbol}`;
 }
 
 export function currency(raw: bigint, u: Units): string {

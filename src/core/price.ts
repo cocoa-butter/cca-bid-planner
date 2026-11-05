@@ -83,3 +83,24 @@ export function floorToTick(priceQ96: bigint, tickSpacing: bigint): bigint {
 export function nextTickAbove(priceQ96: bigint, tickSpacing: bigint): bigint {
   return (priceQ96 / tickSpacing + 1n) * tickSpacing;
 }
+
+/**
+ * Q96 price -> human string with `sig` significant digits (rounded), for display of
+ * prices of any magnitude (e.g. 8.89e-9 ETH per token prints as 0.00000000889).
+ */
+export function formatPriceQ96(
+  priceQ96: bigint,
+  tokenDecimals: number,
+  currencyDecimals: number,
+  sig = 7,
+): string {
+  if (priceQ96 === 0n) return '0';
+  const full = fromPriceQ96(priceQ96, tokenDecimals, currencyDecimals, 60, true);
+  const [int = '0', frac = ''] = full.split('.');
+  if (int !== '0') {
+    const keep = Math.max(0, sig - int.length);
+    return fromPriceQ96(priceQ96, tokenDecimals, currencyDecimals, keep);
+  }
+  const zeros = frac.length - frac.replace(/^0+/, '').length;
+  return fromPriceQ96(priceQ96, tokenDecimals, currencyDecimals, zeros + sig);
+}

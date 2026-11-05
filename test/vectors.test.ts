@@ -6,7 +6,14 @@ import {
   Q96,
 } from '../src/core/constants.js';
 import { mulDivUp, requiredDemand, tokensFor } from '../src/core/math.js';
-import { fromPriceQ96, fromRaw, parseDecimal, toPriceQ96, toRaw } from '../src/core/price.js';
+import {
+  formatPriceQ96,
+  fromPriceQ96,
+  fromRaw,
+  parseDecimal,
+  toPriceQ96,
+  toRaw,
+} from '../src/core/price.js';
 import { CAP_Q96, FLOOR_Q96_EXACT, MIN_RAISE, SUPPLY } from './fixtures/slop.js';
 
 describe('brief vectors', () => {
@@ -64,5 +71,13 @@ describe('math', () => {
     expect(toRaw('2500.5', 6)).toBe(2_500_500_000n);
     expect(fromRaw(2_500_500_000n, 6)).toBe('2500.5');
     expect(() => parseDecimal('-1')).toThrow();
+  });
+});
+
+describe('price display', () => {
+  it('keeps significant digits for tiny and large prices', () => {
+    expect(formatPriceQ96(toPriceQ96('0.00000000889', 18, 18), 18, 18)).toBe('0.00000000889');
+    expect(formatPriceQ96(toPriceQ96('0.00889', 18, 6), 18, 6)).toBe('0.00889');
+    expect(formatPriceQ96(toPriceQ96('1234.5678', 18, 6), 18, 6)).toBe('1234.568');
   });
 });
