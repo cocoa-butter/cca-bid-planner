@@ -21,9 +21,15 @@ It never holds keys and never signs anything. The `calldata` command encodes `su
 ## Install
 
 ```sh
-npm install -g github:cocoa-butter/cca-bid-planner   # or clone and: npm ci && npm run build
+# run without installing
+npx github:cocoa-butter/cca-bid-planner --help
+
+# or install the command
+npm install -g github:cocoa-butter/cca-bid-planner
 cca-bid-planner --help
 ```
+
+Not yet published to the npm registry. Installing from GitHub builds the package on install.
 
 Requires Node 22 or later. viem is the only runtime dependency.
 
