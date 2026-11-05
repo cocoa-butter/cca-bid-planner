@@ -167,7 +167,13 @@ describe.skipIf(!upstream)('differential vs upstream contract', () => {
     });
     let accepted = 0;
     cases.forEach((c, i) => {
-      const out = JSON.parse(readFileSync(join(dir, `out-${i}.json`), 'utf8'), (_k, v) =>
+      // Forge emits integers below 2^64 as bare JSON numbers; quote them before parsing so
+      // values above 2^53 keep full precision.
+      const raw = readFileSync(join(dir, `out-${i}.json`), 'utf8').replace(
+        /([:[,]\s*)(\d{16,})/g,
+        '$1"$2"',
+      );
+      const out = JSON.parse(raw, (_k, v) =>
         typeof v === 'number' || (typeof v === 'string' && /^\d+$/.test(v)) ? BigInt(v) : v,
       );
       const got = runEngine(c);

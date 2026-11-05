@@ -14,6 +14,7 @@ import {MockToken} from './utils/MockToken.sol';
 
 contract DiffTest is Test {
     function test_differential() public {
+        vm.pauseGasMetering();
         string memory inDir = vm.envString('CCA_DIFF_IN');
         uint256 n = vm.envUint('CCA_DIFF_CASES');
         for (uint256 i = 0; i < n; i++) {
