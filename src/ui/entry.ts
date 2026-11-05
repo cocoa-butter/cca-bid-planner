@@ -17,7 +17,7 @@ function fmt(s: AuctionSnapshot) {
   const t = s.token;
   const c = s.currency;
   return {
-    price: (q: bigint) => `${fromPriceQ96(q, t.decimals, c.decimals, 8)} ${c.symbol}`,
+    price: (q: bigint) => `${fromPriceQ96(q, t.decimals, c.decimals, 6)} ${c.symbol}`,
     cur: (r: bigint) => `${group(fromRaw(r, c.decimals, 2))} ${c.symbol}`,
     tok: (r: bigint) => `${group(fromRaw(r, t.decimals, 0))} ${t.symbol}`,
   };
@@ -125,8 +125,30 @@ function render() {
   }
 }
 
+const FIELDS = ['budget', 'maxPrice', 'levels', 'weighting', 'demand', 'arrival'] as const;
+
+/** Prefill inputs from the query string (e.g. ?budget=40000&maxPrice=0.018) and keep it in sync. */
+function syncFromUrl() {
+  const q = new URLSearchParams(location.search);
+  for (const f of FIELDS) {
+    const v = q.get(f);
+    if (v !== null) ($(f) as HTMLInputElement).value = v;
+  }
+}
+
+function syncToUrl() {
+  const q = new URLSearchParams();
+  for (const f of FIELDS) {
+    const v = ($(f) as HTMLInputElement).value.trim();
+    if (v) q.set(f, v);
+  }
+  history.replaceState(null, '', `?${q.toString()}`);
+}
+
 function init() {
   ($('snapshot') as HTMLTextAreaElement).value = snapshotToJson(demoSnapshot());
+  syncFromUrl();
+  $('run').addEventListener('click', syncToUrl);
   $('run').addEventListener('click', render);
   $('reset').addEventListener('click', () => {
     ($('snapshot') as HTMLTextAreaElement).value = snapshotToJson(demoSnapshot());

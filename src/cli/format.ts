@@ -25,7 +25,7 @@ export function unitsOf(s: AuctionSnapshot): Units {
 }
 
 export function price(q96: bigint, u: Units): string {
-  return `${fromPriceQ96(q96, u.tokenDecimals, u.currencyDecimals, 10)} ${u.currencySymbol}/${u.tokenSymbol}`;
+  return `${fromPriceQ96(q96, u.tokenDecimals, u.currencyDecimals, 8)} ${u.currencySymbol}/${u.tokenSymbol}`;
 }
 
 export function currency(raw: bigint, u: Units): string {
