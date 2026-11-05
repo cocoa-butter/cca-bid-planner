@@ -25,7 +25,7 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npx vitest run --reporter=verbose
-      - run: npm run build
+      - run: npm run build:site
       - name: CLI smoke test
         run: |
           node dist/cli/bin.js --help

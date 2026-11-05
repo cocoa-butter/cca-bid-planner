@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/cocoa-butter/cca-bid-planner/security/advisories/new
+    about: Report privately. Do not open a public issue.
+  - name: Bug in the CCA contracts themselves
+    url: https://github.com/Uniswap/continuous-clearing-auction
+    about: Contract issues belong upstream with Uniswap Labs.

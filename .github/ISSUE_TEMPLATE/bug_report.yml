@@ -1,0 +1,41 @@
+name: Bug report
+description: Something is wrong, for example a crash, a wrong number, or a mismatch with the contract
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. If the planner's fills or refunds differ from what the contract did, that is the most important kind of bug here. Please include the auction and block.
+        For security issues, use a private advisory instead: https://github.com/cocoa-butter/cca-bid-planner/security/advisories/new
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you ran, what you expected, and what you got.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Command line or planner URL. Attach a snapshot (`inspect --save`) if you can.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: auction
+    attributes:
+      label: Auction and chain
+      placeholder: 0x... on Base, block 12345678
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `cca-bid-planner --version`, or the commit you installed from.
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options: [CLI, Website planner, Library]
+    validations:
+      required: true
