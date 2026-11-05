@@ -1,7 +1,8 @@
 /**
- * A synthetic, clearly-labelled example auction for the demo page and docs. It reuses the
- * illustrative $SLOP figures (floor 0.00889 USDC, 45M supply, 400k USDC minimum
- * raise). Those figures are assumptions, not a chain read. Prior bids are invented.
+ * A synthetic, clearly labelled example auction for the planner page and docs, shaped like
+ * the reported Slop Cash (SLOP) sale on Robinhood Chain: 45M SLOP, bids in USDG, floor about
+ * 0.00889 USDG, 400k USDG minimum raise. Those figures come from third-party coverage and
+ * are not a chain read. The schedule, address and prior bids are invented.
  */
 import { maxBidPrice } from '../core/constants.js';
 import { AuctionEngine } from '../core/engine.js';
@@ -44,13 +45,14 @@ export function demoSnapshot(): AuctionSnapshot {
   engine.checkpoint(now);
   return {
     version: 1,
-    chainId: 1,
+    chainId: 4663,
     auction: '0x000000000000000000000000000000000000dE30',
     blockNumber: now,
     token: { address: '0x00000000000000000000000000000000000051a9', symbol: 'SLOP', decimals: 18 },
+    // Global Dollar (USDG) on Robinhood Chain.
     currency: {
-      address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-      symbol: 'USDC',
+      address: '0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168',
+      symbol: 'USDG',
       decimals: 6,
     },
     totalSupply,
