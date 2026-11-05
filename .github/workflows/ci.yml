@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npx vitest run --reporter=verbose
+      - run: npm run build
+      - name: CLI smoke test
+        run: |
+          node dist/cli/bin.js --help
+          node dist/cli/bin.js inspect --snapshot test/fixtures/demo-snapshot.json
+          node dist/cli/bin.js plan --snapshot test/fixtures/demo-snapshot.json --budget 25000 --max-price 0.02196
+      - name: ABI matches pinned upstream commit
+        if: matrix.node == 22
+        run: |
+          git clone --quiet https://github.com/Uniswap/continuous-clearing-auction.git /tmp/cca
+          git -C /tmp/cca checkout --quiet "$(node -p "require('fs').readFileSync('src/abi/cca.ts','utf8').match(/UPSTREAM_COMMIT = '([0-9a-f]{40})'/)[1]")"
+          npm run abi:extract -- /tmp/cca
+          npx biome format --write src/abi/cca.ts
+          git diff --exit-code src/abi/cca.ts
