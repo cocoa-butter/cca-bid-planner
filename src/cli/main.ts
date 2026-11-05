@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { type Address, getAddress } from 'viem';
 import { UPSTREAM_COMMIT } from '../abi/cca.js';
+import { CHAINS, findChain } from '../chains.js';
 import { bidCalldata } from '../core/calldata.js';
 import { inspect } from '../core/inspect.js';
 import { type PlannedBid, plan } from '../core/plan.js';
@@ -15,6 +16,7 @@ import {
   snapshotToJson,
 } from '../core/snapshot.js';
 import { hasCriticalFailure } from '../core/verify.js';
+import { discoverAuctions, formatDuration } from '../rpc/discover.js';
 import { clientFor, readSnapshot } from '../rpc/read.js';
 import { bool, flag, flags, type ParsedArgs, parseArgs, required, UsageError } from './args.js';
 import {
@@ -38,6 +40,7 @@ Usage
   cca-bid-planner <command> [source] [options]
 
 Commands
+  list       List auctions on a chain (live and upcoming first)
   inspect    Read parameters and live state, print a labelled risk report
   plan       Build a bid schedule for a budget and simulate it under demand scenarios
   simulate   Replay a given schedule against one demand scenario
@@ -45,15 +48,16 @@ Commands
   verify     Run parameter sanity checks; exit code 3 if a critical check fails
 
 Source (one of)
-  --auction <address> --rpc <url>   Read live state over JSON-RPC (read-only)
-  --snapshot <file>                 Use a saved snapshot (see inspect --save)
+  --chain <name> --auction <address>  Read live state from a supported chain's public RPC
+  --auction <address> --rpc <url>     Read live state over your own JSON-RPC (read-only)
+  --snapshot <file>                   Use a saved snapshot (see inspect --save)
+
+Chains: ethereum, base, unichain, arbitrum, robinhood (or a chain id)
 
 Common options
   --block <n>             Read state at block n (RPC) / submit at block n (plan)
-  --required-raise <raw>  requiredCurrencyRaised in raw units, if factory logs are unavailable
-  --from-block <n>        Lowest block to search for the AuctionCreated log
-  --log-lookback <n>      Blocks before the start block to search (default 500000)
-  --log-chunk <n>         Max blocks per eth_getLogs request (default 5000)
+  --required-raise <raw>  Minimum raise in raw units, if Uniswap's index lacks the auction
+  --all                   list: include ended auctions
   --json                  Machine-readable output
   -h, --help              Show help
 
@@ -104,6 +108,8 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
   }
   try {
     switch (args.command) {
+      case 'list':
+        return await cmdList(args, io);
       case 'inspect':
         return await cmdInspect(args, io);
       case 'plan':
@@ -127,30 +133,91 @@ export async function run(argv: readonly string[], io: Io): Promise<number> {
   }
 }
 
+function resolveRpc(args: ParsedArgs): { rpc: string; chainKey?: string } {
+  const chainArg = flag(args, 'chain');
+  const chain = chainArg ? findChain(chainArg) : undefined;
+  if (chainArg && !chain) {
+    throw new UsageError(
+      `unknown chain "${chainArg}" (try ${CHAINS.map((c) => c.key).join(', ')}, or pass --rpc)`,
+    );
+  }
+  const rpc = flag(args, 'rpc') ?? chain?.rpc ?? process.env.CCA_RPC_URL;
+  if (!rpc) throw new UsageError('give --chain <name> or --rpc <url>');
+  return chain ? { rpc, chainKey: chain.key } : { rpc };
+}
+
 async function loadSnapshot(args: ParsedArgs, io: Io): Promise<AuctionSnapshot> {
   const file = flag(args, 'snapshot');
   if (file) return snapshotFromJson(readFileSync(file, 'utf8'));
   const auction = flag(args, 'auction');
-  const rpc = flag(args, 'rpc') ?? process.env.CCA_RPC_URL;
-  if (!auction || !rpc)
-    throw new UsageError('give --snapshot <file>, or --auction <address> and --rpc <url>');
+  if (!auction) {
+    throw new UsageError(
+      'give --snapshot <file>, or --auction <address> with --chain <name> or --rpc <url>',
+    );
+  }
+  const { rpc } = resolveRpc(args);
   const block = flag(args, 'block');
   const req = flag(args, 'required-raise');
   const quiet = bool(args, 'json') || bool(args, 'quiet');
   const { snapshot, notes } = await readSnapshot(clientFor(rpc), getAddress(auction), {
     ...(block && args.command === 'inspect' ? { blockNumber: BigInt(block) } : {}),
     ...(req ? { requiredCurrencyRaised: BigInt(req) } : {}),
-    ...(flag(args, 'from-block')
-      ? { logFromBlock: BigInt(flag(args, 'from-block') as string) }
-      : {}),
-    ...(flag(args, 'log-lookback')
-      ? { logLookback: BigInt(flag(args, 'log-lookback') as string) }
-      : {}),
-    ...(flag(args, 'log-chunk') ? { logChunk: BigInt(flag(args, 'log-chunk') as string) } : {}),
     ...(quiet ? {} : { onProgress: (m: string) => io.err(`  ${m}`) }),
   });
   if (!quiet) for (const n of notes) io.err(`note: ${n}`);
   return snapshot;
+}
+
+async function cmdList(args: ParsedArgs, io: Io): Promise<number> {
+  const { rpc } = resolveRpc(args);
+  const client = clientFor(rpc);
+  const chainId = await client.getChainId();
+  const all = await discoverAuctions(client, chainId);
+  const shown = bool(args, 'all') ? all : all.filter((a) => a.status !== 'ended');
+  if (bool(args, 'json')) {
+    io.out(toJson(shown));
+    return EXIT.ok;
+  }
+  const name = CHAINS.find((c) => c.id === chainId)?.name ?? `chain ${chainId}`;
+  if (shown.length === 0) {
+    io.out(
+      `No ${bool(args, 'all') ? '' : 'live or upcoming '}auctions on ${name}.${
+        bool(args, 'all') ? '' : ` ${all.length} ended auction(s); add --all to see them.`
+      }`,
+    );
+    return EXIT.ok;
+  }
+  const rows = shown.map((a) => {
+    const u: Units = {
+      tokenDecimals: a.tokenDecimals,
+      currencyDecimals: a.currencyDecimals,
+      tokenSymbol: a.tokenSymbol,
+      currencySymbol: a.currencySymbol,
+    };
+    const when =
+      a.status === 'upcoming'
+        ? `starts in ${a.msUntilStart !== undefined ? formatDuration(a.msUntilStart) : '?'}`
+        : a.status === 'live'
+          ? `ends in ${a.msUntilEnd !== undefined ? formatDuration(a.msUntilEnd) : '?'}`
+          : 'ended';
+    return [
+      a.tokenSymbol + (a.isFlagged ? ' (flagged)' : ''),
+      when,
+      price(a.clearingPrice, u),
+      `${currency(a.totalBidVolume, u)} / ${currency(a.requiredCurrencyRaised, u)}`,
+      a.address,
+    ];
+  });
+  io.out(
+    [
+      `${shown.length} auction(s) on ${name}`,
+      '',
+      ...table(rows, ['token', 'status', 'current price', 'bids / minimum', 'auction']),
+      '',
+      'Plan a bid: cca-bid-planner plan --chain <name> --auction <address> --budget <n> --max-price <p>',
+    ].join('\n'),
+  );
+  return EXIT.ok;
 }
 
 async function cmdInspect(args: ParsedArgs, io: Io): Promise<number> {
