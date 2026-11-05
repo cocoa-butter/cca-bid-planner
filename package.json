@@ -1,0 +1,62 @@
+{
+  "name": "cca-bid-planner",
+  "version": "0.1.0",
+  "description": "Read-only bid planner for Uniswap Continuous Clearing Auctions (CCA): bid schedules, fill simulation and risk checks. Never signs.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "cca-bid-planner": "dist/cli/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "THIRD_PARTY_LICENSES.md",
+    "AUTHORS.md"
+  ],
+  "keywords": [
+    "uniswap",
+    "cca",
+    "continuous-clearing-auction",
+    "auction",
+    "bid",
+    "planner"
+  ],
+  "scripts": {
+    "build": "tsup && node scripts/build-demo.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "abi:extract": "node scripts/extract-abi.mjs",
+    "smoke": "node dist/cli/bin.js --help"
+  },
+  "dependencies": {
+    "viem": "2.57.16"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.5",
+    "@types/node": "26.6.6",
+    "fast-check": "4.10.2",
+    "tsup": "9.0.0",
+    "typescript": "7.0.2",
+    "vitest": "5.1.0"
+  }
+}

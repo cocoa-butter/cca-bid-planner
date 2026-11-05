@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "files": {
+    "includes": ["**", "!dist", "!node_modules", "!coverage", "!.scratch"]
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "javascript": {
+    "formatter": { "quoteStyle": "single", "semicolons": "always" }
+  },
+  "linter": {
+    "rules": {
+      "recommended": true,
+      "complexity": { "useMathMinMax": "off" }
+    }
+  }
+}
