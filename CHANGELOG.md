@@ -9,7 +9,19 @@ All notable changes to this project are documented here. The format follows
 ### Added
 
 - Website with the planner, documentation and a landing page.
-- The planner loads auctions straight from a public RPC in the browser.
+- Auction discovery: browse live, upcoming and ended auctions per chain, using Uniswap's
+  auction index, with no chain-history scans. CLI: `cca-bid-planner list --chain <name>`.
+- Robinhood Chain (4663) support, alongside Ethereum, Base, Unichain and Arbitrum.
+  `--chain <name>` picks a public RPC.
+- Plain-language planner: auction cards with time left and progress toward the minimum
+  raise, outcome cards for quiet, expected and busy demand, and raw values moved under
+  "Advanced".
+
+### Fixed
+
+- The auction clock now follows upstream `BlockNumberish`. On Unichain the contract counts
+  flashblocks, not `eth_blockNumber`, so plans there used the wrong block before.
+- The minimum raise now comes from Uniswap's auction index instead of scanning factory logs.
 
 ## [0.1.0] - 2026-11-05
 

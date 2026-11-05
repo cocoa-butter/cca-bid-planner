@@ -6,22 +6,31 @@ cca-bid-planner <command> [source] [options]
 
 ## Sources
 
-Every command needs an auction, given one of two ways:
+Every command except `list` needs an auction, given one of three ways:
 
-| Option                            | Meaning                                                                                 |
-| --------------------------------- | --------------------------------------------------------------------------------------- |
-| `--auction <address> --rpc <url>` | Read live state over JSON-RPC (read-only). `CCA_RPC_URL` is used if `--rpc` is missing. |
-| `--snapshot <file>`               | Use a snapshot saved by `inspect --save`.                                               |
+| Option                               | Meaning                                                                                     |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `--chain <name> --auction <address>` | Read live state from a supported chain's public RPC.                                        |
+| `--auction <address> --rpc <url>`    | Read live state over your own RPC (read-only). `CCA_RPC_URL` is used if `--rpc` is missing. |
+| `--snapshot <file>`                  | Use a snapshot saved by `inspect --save`.                                                   |
 
-The minimum raise (`requiredCurrencyRaised`) has no view function. It is read from the
-factory's `AuctionCreated` log. If your RPC limits log queries, use these:
+Supported chains: `ethereum`, `base`, `unichain`, `arbitrum` and `robinhood`. You can also
+pass a chain id.
 
-| Option                   | Meaning                                                    |
-| ------------------------ | ---------------------------------------------------------- |
-| `--required-raise <raw>` | Give the value directly, in raw currency units.            |
-| `--from-block <n>`       | Lowest block to search.                                    |
-| `--log-lookback <n>`     | Blocks before the start block to search (default 500,000). |
-| `--log-chunk <n>`        | Blocks per `eth_getLogs` request (default 5,000).          |
+The minimum raise (`requiredCurrencyRaised`) has no view function on the contract. The tool
+reads it from Uniswap's auction index. If the index doesn't know an auction, pass
+`--required-raise <raw amount>`.
+
+## list
+
+```sh
+cca-bid-planner list --chain robinhood        # live and upcoming
+cca-bid-planner list --chain ethereum --all   # include ended auctions
+```
+
+Lists auctions from Uniswap's auction index with status, time left, current price and
+progress toward the minimum raise. Status and time come from the chain's own block
+clock, read live, so they stay right even when the index lags.
 
 ## inspect
 
@@ -86,6 +95,7 @@ Usage
   cca-bid-planner <command> [source] [options]
 
 Commands
+  list       List auctions on a chain (live and upcoming first)
   inspect    Read parameters and live state, print a labelled risk report
   plan       Build a bid schedule for a budget and simulate it under demand scenarios
   simulate   Replay a given schedule against one demand scenario
@@ -93,15 +103,16 @@ Commands
   verify     Run parameter sanity checks; exit code 3 if a critical check fails
 
 Source (one of)
-  --auction <address> --rpc <url>   Read live state over JSON-RPC (read-only)
-  --snapshot <file>                 Use a saved snapshot (see inspect --save)
+  --chain <name> --auction <address>  Read live state from a supported chain's public RPC
+  --auction <address> --rpc <url>     Read live state over your own JSON-RPC (read-only)
+  --snapshot <file>                   Use a saved snapshot (see inspect --save)
+
+Chains: ethereum, base, unichain, arbitrum, robinhood (or a chain id)
 
 Common options
   --block <n>             Read state at block n (RPC) / submit at block n (plan)
-  --required-raise <raw>  requiredCurrencyRaised in raw units, if factory logs are unavailable
-  --from-block <n>        Lowest block to search for the AuctionCreated log
-  --log-lookback <n>      Blocks before the start block to search (default 500000)
-  --log-chunk <n>         Max blocks per eth_getLogs request (default 5000)
+  --required-raise <raw>  Minimum raise in raw units, if Uniswap's index lacks the auction
+  --all                   list: include ended auctions
   --json                  Machine-readable output
   -h, --help              Show help
 

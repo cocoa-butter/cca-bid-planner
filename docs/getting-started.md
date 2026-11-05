@@ -7,12 +7,19 @@ transaction.
 
 ## Use it in the browser
 
-Open the [planner](/app). Pick a chain and paste an auction address. The page reads state
-straight from a public RPC endpoint in your browser; nothing goes through a server of
-ours. You can also paste a snapshot saved with `inspect --save`.
+Open the [planner](/app):
 
-A planner link can be shared. Inputs are kept in the query string, for example
-`/app?chain=1&auction=0x...&budget=25000&maxPrice=0.02`.
+1. **Pick a network.** Robinhood Chain, Ethereum, Base, Unichain or Arbitrum.
+2. **Pick an auction.** You see the live and upcoming ones, with time left and how close
+   each is to its minimum raise.
+3. **Say how much you want to spend and the most you'd pay per token.**
+
+The page shows what you'd likely get, and what happens if the auction is quiet or busy.
+
+The list comes from Uniswap's auction index. Auction state is read straight from the chain
+in your browser. The page can't move your money.
+
+Every auction has its own link, `/app?chain=robinhood&auction=0x...`, so you can share it.
 
 ## Use it from the terminal
 
@@ -29,10 +36,11 @@ npm install -g github:cocoa-butter/cca-bid-planner
 A typical session:
 
 ```sh
-RPC=https://ethereum-rpc.publicnode.com
+# 0. Find an auction
+cca-bid-planner list --chain robinhood
 
 # 1. Read the auction and check it for known risks; keep a snapshot
-cca-bid-planner inspect --auction 0x... --rpc $RPC --save auction.json
+cca-bid-planner inspect --chain robinhood --auction 0x... --save auction.json
 
 # 2. Ladder 25,000 USDC up to 0.02 USDC per token, under the default scenarios
 cca-bid-planner plan --snapshot auction.json --budget 25000 --max-price 0.02

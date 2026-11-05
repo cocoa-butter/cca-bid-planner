@@ -7,37 +7,30 @@ import {
   BaseError,
   ContractFunctionRevertedError,
   createPublicClient,
-  decodeAbiParameters,
   erc20Abi,
   http,
   type PublicClient,
-  parseAbiItem,
-  parseAbiParameters,
 } from 'viem';
 import { ccaAbi, tickDataLensAbi } from '../abi/cca.js';
 import { MAX_TICK_PTR, ZERO_ADDRESS } from '../core/constants.js';
 import type { Checkpoint } from '../core/engine.js';
 import type { AuctionSnapshot, TokenInfo } from '../core/snapshot.js';
 
-/** CCALens v2.0.0, canonical address (upstream README). */
-export const CCA_LENS_ADDRESS = '0xc3C65F5453A3674aDb693cbdA3C842545cD30f53' as const;
-/** ContinuousClearingAuctionFactory v2.0.0, canonical address (upstream README). */
-export const CCA_FACTORY_ADDRESS = '0x00cCa200BF124dBfA848937c553864f4B4CE0632' as const;
+import { auctionClock, CCA_FACTORY_ADDRESS, CCA_LENS_ADDRESS } from './clock.js';
+import { type ApiOptions, getAuction } from './uniswap-api.js';
 
-const auctionCreatedEvent = parseAbiItem(
-  'event AuctionCreated(address indexed auction, address indexed token, uint256 amount, bytes configData)',
-);
+export { auctionClock, CCA_FACTORY_ADDRESS, CCA_LENS_ADDRESS };
 
 export interface ReadOptions {
+  /** RPC block to read state at (default latest). This is not the auction clock on every chain. */
   blockNumber?: bigint;
-  /** Overrides requiredCurrencyRaised when it cannot be found in factory logs. */
+  /**
+   * requiredCurrencyRaised has no view function. By default it comes from Uniswap's auction
+   * API; pass it here to skip that lookup.
+   */
   requiredCurrencyRaised?: bigint;
-  /** Max blocks per eth_getLogs request. Default 5000. */
-  logChunk?: bigint;
-  /** How far before startBlock to search for the AuctionCreated log. Default 500_000 blocks. */
-  logLookback?: bigint;
-  /** Lowest block to search for the AuctionCreated log. Overrides logLookback. */
-  logFromBlock?: bigint;
+  /** Options for the Uniswap auction API (e.g. a proxy baseUrl in browsers). */
+  api?: ApiOptions;
   /** Hard cap on initialized ticks to read. Default 2000. */
   maxTicks?: number;
   onProgress?: (msg: string) => void;
@@ -58,6 +51,13 @@ export async function readSnapshot(
   const blockNumber = opts.blockNumber ?? (await client.getBlockNumber());
   const chainId = await client.getChainId();
   const at = { blockNumber } as const;
+  // The auction's own block clock (differs from eth_blockNumber on Unichain).
+  const clock = await auctionClock(client, chainId, blockNumber);
+  if (clock !== blockNumber) {
+    notes.push(
+      `auction clock is ${clock} (RPC block ${blockNumber}); chain ${chainId} counts blocks differently`,
+    );
+  }
   const c = { address: auction, abi: ccaAbi } as const;
 
   const code = await client.getCode({ address: auction, ...at });
@@ -159,13 +159,13 @@ export async function readSnapshot(
       ticks.unshift({ price: clearingPrice, currencyDemandQ96: t.currencyDemandQ96 });
   }
 
-  const required = await findRequiredRaise(client, auction, startBlock, blockNumber, opts, notes);
+  const required = await findRequiredRaise(chainId, auction, opts, notes);
 
   const snapshot: AuctionSnapshot = {
     version: 1,
     chainId,
     auction,
-    blockNumber,
+    blockNumber: clock,
     token: tokenInfo,
     currency: currencyInfo,
     totalSupply,
@@ -258,73 +258,31 @@ async function readTicks(
 }
 
 async function findRequiredRaise(
-  client: PublicClient,
+  chainId: number,
   auction: Address,
-  startBlock: bigint,
-  head: bigint,
   opts: ReadOptions,
   notes: string[],
 ): Promise<bigint> {
   if (opts.requiredCurrencyRaised !== undefined) {
-    notes.push(
-      'requiredCurrencyRaised taken from --required-raise; the auction was not matched to the v2 factory, so confirm it is a CCA v2 deployment',
-    );
+    notes.push('minimum raise taken from your input');
     return opts.requiredCurrencyRaised;
   }
-  // requiredCurrencyRaised has no view; it is in the factory's AuctionCreated configData.
-  // Auctions are created before they start, so search backwards from the start block.
-  const chunk = opts.logChunk ?? 5000n;
-  const top = startBlock < head ? startBlock : head;
-  const lookback = opts.logLookback ?? 500_000n;
-  const floor = opts.logFromBlock ?? (top > lookback ? top - lookback : 0n);
-  if (floor > top) {
+  opts.onProgress?.('looking up the minimum raise');
+  let found: Awaited<ReturnType<typeof getAuction>>;
+  try {
+    found = await getAuction(chainId, auction, opts.api ?? {});
+  } catch (e) {
     throw new Error(
-      `--from-block ${floor} is after the auction start block ${top}; the auction is created before it starts`,
+      `could not look up the minimum raise (${(e as Error).message}). It has no on-chain view; pass --required-raise <raw amount>.`,
     );
   }
-  let refused = 0;
-  let lastError = '';
-  for (let to = top; to >= floor; to -= chunk) {
-    const from = to - chunk + 1n > floor ? to - chunk + 1n : floor;
-    opts.onProgress?.(`searching AuctionCreated in blocks ${from}-${to}`);
-    let logs: Awaited<ReturnType<typeof client.getLogs<typeof auctionCreatedEvent>>> = [];
-    try {
-      logs = await client.getLogs({
-        address: CCA_FACTORY_ADDRESS,
-        event: auctionCreatedEvent,
-        args: { auction },
-        fromBlock: from,
-        toBlock: to,
-      });
-    } catch (e) {
-      refused += 1;
-      lastError = e instanceof BaseError ? e.shortMessage : String(e);
-    }
-    const log = logs[0];
-    if (log?.args.configData) {
-      const params = decodeParams(log.args.configData);
-      notes.push(`requiredCurrencyRaised read from AuctionCreated at block ${log.blockNumber}`);
-      return params;
-    }
-    if (from === floor) break;
+  if (!found) {
+    throw new Error(
+      "Uniswap's auction index does not know this auction, so its minimum raise is unknown. Pass --required-raise <raw amount>.",
+    );
   }
-  const why =
-    refused > 0
-      ? ` The RPC refused ${refused} log request(s) (last error: ${lastError}); try --log-chunk with a smaller range or another RPC.`
-      : ` Searched blocks ${floor}-${top}; widen with --from-block or --log-lookback.`;
-  throw new Error(
-    `requiredCurrencyRaised not found in v2 factory logs.${why} Or pass --required-raise <raw amount> (it has no on-chain view).`,
-  );
-}
-
-/** configData is abi.encode(AuctionParameters), as the factory abi.decodes it. */
-const auctionParametersType = parseAbiParameters(
-  '(address currency, address tokensRecipient, address fundsRecipient, uint64 startBlock, uint64 endBlock, uint64 claimBlock, uint256 tickSpacing, address validationHook, uint256 floorPrice, uint128 requiredCurrencyRaised, bytes auctionStepsData)',
-);
-
-function decodeParams(configData: `0x${string}`): bigint {
-  const [params] = decodeAbiParameters(auctionParametersType, configData);
-  return params.requiredCurrencyRaised;
+  notes.push("minimum raise from Uniswap's auction index");
+  return found.requiredCurrencyRaised;
 }
 
 function toCheckpoint(c: {

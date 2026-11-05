@@ -50,9 +50,31 @@ git diff --exit-code src/abi/cca.ts
 | Value                    | How the tool gets it                                                                                                                                                 |
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `auctionStepsData`       | Runtime code of the SSTORE2 contract at `pointer()`, minus its leading `0x00` byte                                                                                   |
-| `requiredCurrencyRaised` | `configData` of the factory's `AuctionCreated` event, decoded as `AuctionParameters`. Pass `--required-raise` if logs are unavailable.                               |
+| `requiredCurrencyRaised` | Uniswap's auction index (`data.v1.AuctionService/GetAuction`). Pass `--required-raise` if the index lacks the auction.                                               |
 | tokens received          | Simulating `checkpoint()` with `eth_call`. A `TokensNotReceived` revert means no. Before the start block it falls back to `token.balanceOf(auction) >= totalSupply`. |
 
 State views reflect the **last checkpoint**, which may be stale. The tool simulates
 `checkpoint()` at the read block (`eth_call`, nothing sent). Its own engine then
 checkpoints forward from the stored state, and `inspect` reports any disagreement.
+
+## Block clock per chain
+
+The auction contract does not always count blocks the way `eth_blockNumber` does. Upstream's
+`BlockNumberish` decides how at deployment:
+
+| Chain                                          | Auction clock                           | Relation to `eth_blockNumber` |
+| ---------------------------------------------- | --------------------------------------- | ----------------------------- |
+| Ethereum, Base                                 | `block.number`                          | same                          |
+| Arbitrum One, Robinhood Chain (Arbitrum Orbit) | `ArbSys.arbBlockNumber()`               | same as the L2 block number   |
+| Unichain                                       | flashblock counter at `0x3c3A8a41…753E` | about 2× on 2026-11-05        |
+
+`readSnapshot` stores the auction clock as `blockNumber`. Every plan and status uses that
+clock. Time left is estimated from the clock's measured tick rate over the last 50 blocks.
+
+## Factories
+
+Auctions on Robinhood Chain come from two factories: canonical v2.0.0 `0x00cCa200…0632`,
+and `0x000000001F26a0044BaA66024e7b6599c61963F8`. The second one created the USDG launches
+such as NOTE. Its bytecode is 58 bytes larger, which matches the `blocknumberish` bump in
+`v2.1.0`. `src/` is otherwise identical, so the same ABI and engine apply to both.
+Discovery uses Uniswap's index, so it does not depend on which factory deployed an auction.

@@ -1,79 +1,81 @@
-<!-- title: Planner: cca-bid-planner -->
-<!-- description: Plan a bid ladder for a Uniswap CCA auction in your browser. Loads auctions read-only over public RPC. -->
+<!-- title: Plan a bid: cca-bid-planner -->
+<!-- description: Pick a live Uniswap token auction, say how much you want to spend, and see what you'd likely get. Read-only, runs in your browser. -->
 <div class="wrap">
-  <div class="app">
-    <div>
-      <div class="panel">
-        <h3>1. Auction</h3>
-        <div class="tabs" role="tablist">
-          <button type="button" id="tab-rpc" class="on" role="tab">Load from chain</button>
-          <button type="button" id="tab-paste" role="tab">Paste snapshot</button>
-        </div>
-        <div id="src-rpc">
-          <div class="field">
-            <label for="chain">Chain</label>
-            <select id="chain">
-              <option value="1">Ethereum</option>
-              <option value="8453">Base</option>
-              <option value="130">Unichain</option>
-              <option value="42161">Arbitrum One</option>
-              <option value="custom">Custom RPC</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="rpc">RPC URL <small>(read-only calls only)</small></label>
-            <input id="rpc" spellcheck="false" />
-          </div>
-          <div class="field">
-            <label for="auction">Auction address</label>
-            <input id="auction" placeholder="0x..." spellcheck="false" />
-          </div>
-          <div class="field">
-            <label for="requiredRaise">Minimum raise <small>(raw units; optional, read from factory logs when blank)</small></label>
-            <input id="requiredRaise" inputmode="numeric" />
-          </div>
-          <button class="btn btn-primary btn-sm" id="load" type="button" style="margin-top:12px">Load auction</button>
-        </div>
-        <div id="src-paste" hidden>
-          <div class="field">
-            <label for="snapshot">Snapshot JSON <small>(from <code>inspect --save</code>)</small></label>
-            <textarea id="snapshot" spellcheck="false"></textarea>
-          </div>
-          <button class="btn btn-ghost btn-sm" id="example" type="button" style="margin-top:10px">Use synthetic example</button>
-        </div>
-        <div class="status" id="status"></div>
-      </div>
-
-      <div class="panel">
-        <h3>2. Your bid</h3>
-        <div class="row2">
-          <div class="field"><label for="budget">Budget</label><input id="budget" value="25000" inputmode="decimal" /></div>
-          <div class="field"><label for="maxPrice">Max price</label><input id="maxPrice" value="0.02196" inputmode="decimal" /></div>
-        </div>
-        <div class="row2">
-          <div class="field"><label for="levels">Price levels</label><input id="levels" value="5" inputmode="numeric" /></div>
-          <div class="field">
-            <label for="weighting">Weighting</label>
-            <select id="weighting"><option>auto</option><option>flat</option><option>top</option><option>bottom</option></select>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>3. Demand assumption <span class="tag asm">assumed</span></h3>
-        <div class="field">
-          <label for="demand">External demand <small>(currency; blank = enough to reach your cap)</small></label>
-          <input id="demand" placeholder="e.g. 300000" inputmode="decimal" />
-        </div>
-        <div class="field">
-          <label for="arrival">Arrival</label>
-          <select id="arrival"><option>flat</option><option>early</option><option>late</option></select>
-        </div>
-        <button class="btn btn-primary" id="run" type="button" style="margin-top:14px">Plan</button>
-        <p id="err" class="status err"></p>
+  <section class="pick" id="pick">
+    <div class="pick-head">
+      <div>
+        <h1>Plan a bid</h1>
+        <p class="muted">Pick an auction, say how much you want to spend, and see what you'd likely get back. Nothing here can move your money.</p>
       </div>
     </div>
-    <section class="out" id="out" aria-live="polite"></section>
-  </div>
+
+    <div class="chips" id="chains" role="tablist" aria-label="Network"></div>
+
+    <div class="list-tools">
+      <div class="seg" role="tablist" aria-label="Which auctions">
+        <button type="button" id="show-open" class="on">Live &amp; upcoming</button>
+        <button type="button" id="show-ended">Ended</button>
+      </div>
+      <input id="search" class="search" placeholder="Search by name or address" spellcheck="false" />
+    </div>
+
+    <div id="featured"></div>
+    <div id="list" class="auction-list" aria-live="polite"></div>
+
+    <details class="other">
+      <summary>Have an auction address, or a saved snapshot?</summary>
+      <div class="row2" style="margin-top:10px">
+        <div class="field"><label for="addr">Auction address</label><input id="addr" placeholder="0x..." spellcheck="false" /></div>
+        <div class="field" style="align-self:end"><button class="btn btn-ghost btn-sm" id="open-addr" type="button">Open auction</button></div>
+      </div>
+      <div class="field">
+        <label for="snapshot">Snapshot JSON <small>(from <code>cca-bid-planner inspect --save</code>)</small></label>
+        <textarea id="snapshot" spellcheck="false"></textarea>
+      </div>
+      <button class="btn btn-ghost btn-sm" id="example" type="button" style="margin-top:8px">Try an example auction</button>
+    </details>
+  </section>
+
+  <section class="plan" id="plan" hidden>
+    <button type="button" class="back" id="back">&larr; All auctions</button>
+    <div id="auction-card"></div>
+
+    <div class="plan-grid">
+      <form class="panel" id="form" onsubmit="return false">
+        <div class="field">
+          <label for="budget">How much do you want to spend?</label>
+          <div class="with-unit"><input id="budget" inputmode="decimal" value="1000" /><span class="unit" data-unit="currency"></span></div>
+        </div>
+        <div class="field">
+          <label for="maxPrice">The most you'd pay per token</label>
+          <div class="with-unit"><input id="maxPrice" inputmode="decimal" /><span class="unit" data-unit="price"></span></div>
+          <div class="hint" id="price-hint"></div>
+          <div class="quick" id="price-quick"></div>
+        </div>
+        <fieldset class="field">
+          <legend>Strategy</legend>
+          <label class="radio"><input type="radio" name="weighting" value="flat" checked /> <span><b>Balanced</b><small>Spread evenly between today's price and your max.</small></span></label>
+          <label class="radio"><input type="radio" name="weighting" value="top" /> <span><b>Make sure I get in</b><small>Put more at higher prices, so you stay in if lots of people bid.</small></span></label>
+          <label class="radio"><input type="radio" name="weighting" value="bottom" /> <span><b>Keep my price low</b><small>Put more at lower prices. You may get fewer tokens if it gets busy.</small></span></label>
+        </fieldset>
+        <div class="field">
+          <label for="levels">Split my money into</label>
+          <select id="levels">
+            <option value="1">1 bid</option><option value="3">3 bids</option><option value="5" selected>5 bids</option><option value="8">8 bids</option><option value="10">10 bids</option>
+          </select>
+        </div>
+        <fieldset class="field">
+          <legend>How busy will this auction get?</legend>
+          <label class="radio"><input type="radio" name="demandMode" value="auto" checked /> <span><b>Let the planner estimate</b><small>Shows a range: nobody else, quiet, expected and busy.</small></span></label>
+          <label class="radio"><input type="radio" name="demandMode" value="custom" /> <span><b>I have a guess</b><small>Total others will add from now on.</small></span></label>
+          <div class="with-unit" id="demand-wrap" hidden><input id="demand" inputmode="decimal" placeholder="e.g. 300000" /><span class="unit" data-unit="currency"></span></div>
+        </fieldset>
+        <button class="btn btn-primary" id="run" type="button" style="width:100%;justify-content:center">Show my plan</button>
+        <p id="err" class="status err"></p>
+      </form>
+      <div id="out" class="out" aria-live="polite"></div>
+    </div>
+  </section>
+  <p class="status" id="status"></p>
 </div>
 <script type="module" src="/app/planner.js"></script>
