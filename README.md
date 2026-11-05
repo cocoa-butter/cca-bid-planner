@@ -39,18 +39,26 @@ Requires Node 22 or later. viem is the only runtime dependency.
 
 | Command    | What it does                                                                                                              |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `list`     | Lists live and upcoming auctions on a chain (`--all` adds ended ones).                                                    |
 | `inspect`  | Reads parameters and live state and prints a risk report. Every figure is labelled. `--save file.json` stores a snapshot. |
 | `plan`     | Builds a bid schedule for `--budget` and `--max-price`, then simulates it under four demand scenarios.                    |
 | `simulate` | Replays a given schedule (`--bid price:amount` or `--schedule plan.json`) against one scenario.                           |
 | `calldata` | Emits `submitBid` calldata, with `prevTickPrice` hints and Permit2 or msg.value notes.                                    |
 | `verify`   | Runs parameter sanity checks. Exit code 3 means a critical check failed.                                                  |
 
-Each command takes either `--auction <address> --rpc <url>` (read-only JSON-RPC) or `--snapshot <file>`. Add `--json` for machine-readable output.
+Supported chains are `robinhood`, `ethereum`, `base`, `unichain` and `arbitrum`. Commands take one of:
+
+- `--chain <name> --auction <address>` (public RPC)
+- `--rpc <url> --auction <address>`
+- `--snapshot <file>`
+
+Add `--json` for machine-readable output.
 
 ### `inspect`
 
 ```sh
-cca-bid-planner inspect --auction 0x... --rpc https://ethereum-rpc.publicnode.com --save slop.json
+cca-bid-planner list --chain robinhood
+cca-bid-planner inspect --chain robinhood --auction 0x... --save slop.json
 ```
 
 ```
