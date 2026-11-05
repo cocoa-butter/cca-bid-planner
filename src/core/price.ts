@@ -30,16 +30,21 @@ export function toPriceQ96(human: string, tokenDecimals: number, currencyDecimal
   return numer / denom;
 }
 
-/** Q96 price -> human price string with `digits` fractional digits (truncated). */
+/**
+ * Q96 price -> human price string with up to `digits` fractional digits.
+ * Rounds to nearest (half up) unless `truncate` is set.
+ */
 export function fromPriceQ96(
   priceQ96: bigint,
   tokenDecimals: number,
   currencyDecimals: number,
   digits = 8,
+  truncate = false,
 ): string {
   // human = priceQ96 * 10^(tokenDecimals - currencyDecimals) / 2^96
   const scaled = priceQ96 * 10n ** BigInt(tokenDecimals + digits);
-  const v = scaled / (Q96 * 10n ** BigInt(currencyDecimals));
+  const denom = Q96 * 10n ** BigInt(currencyDecimals);
+  const v = truncate ? scaled / denom : (scaled + denom / 2n) / denom;
   return formatFixed(v, digits);
 }
 

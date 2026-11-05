@@ -158,3 +158,17 @@ export function snapshotFromJson(text: string): AuctionSnapshot {
     throw new Error(`unsupported snapshot version ${String(parsed.version)}`);
   return parsed;
 }
+
+/** Snapshot state from an engine (see AuctionEngine.exportState). */
+export function stateFromEngine(engine: AuctionEngine): AuctionSnapshot['state'] {
+  const st = engine.exportState();
+  return {
+    clearingPrice: st.clearingPrice,
+    sumCurrencyDemandAboveClearingQ96: st.sumCurrencyDemandAboveClearingQ96,
+    currencyRaisedQ96X7: st.currencyRaisedQ96X7,
+    totalClearedQ96X7: st.totalClearedQ96X7,
+    lastCheckpointedBlock: st.lastCheckpointedBlock,
+    latestCheckpoint: st.latestCheckpoint,
+    ticks: [...st.ticks].map(([price, currencyDemandQ96]) => ({ price, currencyDemandQ96 })),
+  };
+}

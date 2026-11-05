@@ -16,8 +16,8 @@ describe('brief vectors', () => {
     const q = toPriceQ96('0.00889', 18, 6);
     expect(q).toBe((889n * 2n ** 96n) / 10n ** 17n);
     expect(q).not.toBe((889n * 2n ** 96n) / 10n ** 12n);
-    expect(fromPriceQ96(q, 18, 6, 5)).toBe('0.00888'); // truncated: q was floored
-    expect(fromPriceQ96(q + 1n, 18, 6, 5)).toBe('0.00889');
+    expect(fromPriceQ96(q, 18, 6, 5, true)).toBe('0.00888'); // q was floored
+    expect(fromPriceQ96(q, 18, 6, 10)).toBe('0.00889'); // rounded for display
   });
 
   it('SLOP: a full sale at the floor raises at least the minimum', () => {

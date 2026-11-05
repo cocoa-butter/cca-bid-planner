@@ -180,6 +180,26 @@ export class AuctionEngine {
     return this.bids;
   }
 
+  /**
+   * Export state in the shape a chain read produces (ticks at or above clearing only).
+   * Useful for fixtures and for demo snapshots of a simulated live auction.
+   */
+  exportState(): EngineState {
+    const ticks = new Map<bigint, bigint>();
+    for (const t of this.ticksSorted()) {
+      if (t >= this.clearing) ticks.set(t, this.tickDemand.get(t) ?? 0n);
+    }
+    return {
+      clearingPrice: this.clearing,
+      sumCurrencyDemandAboveClearingQ96: this.sumAbove,
+      currencyRaisedQ96X7: this.currencyRaisedQ96X7,
+      totalClearedQ96X7: this.totalClearedQ96X7,
+      lastCheckpointedBlock: this.lastBlock,
+      latestCheckpoint: { ...this.cp(this.lastBlock) },
+      ticks,
+    };
+  }
+
   // ----- mutations -----
 
   /** Port of ContinuousClearingAuction.checkpoint(): clamps to endBlock after the auction. */
