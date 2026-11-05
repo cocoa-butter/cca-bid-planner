@@ -1,8 +1,8 @@
 /**
- * Synthetic fixture modelled on the Umia $SLOP auction figures given in the project brief:
+ * Synthetic fixture modelled on the Umia $SLOP auction figures (illustrative, unverified):
  * floor 0.00889 USDC, cap 0.02196 USDC, supply 45,000,000 (18 dp), min raise 400,000 USDC.
  *
- * These figures are ASSUMED: they come from the brief, not from a chain read, and were not
+ * These figures are ASSUMED: they are not from a chain read and were not
  * independently verified. Addresses and the step schedule are invented for testing.
  */
 import { maxBidPrice } from '../../src/core/constants.js';
@@ -15,7 +15,7 @@ export const CURRENCY_DECIMALS = 6;
 export const SUPPLY = 45_000_000n * 10n ** 18n;
 export const MIN_RAISE = 400_000n * 10n ** 6n;
 
-/** Exact Q96 of the brief's floor, before snapping to a tick. */
+/** Exact Q96 of the illustrative floor, before snapping to a tick. */
 export const FLOOR_Q96_EXACT = toPriceQ96('0.00889', TOKEN_DECIMALS, CURRENCY_DECIMALS);
 /** Tick spacing: 1% of the floor (upstream suggests at least 1 bp). */
 export const TICK_SPACING = FLOOR_Q96_EXACT / 100n;

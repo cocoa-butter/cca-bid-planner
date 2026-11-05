@@ -48,7 +48,7 @@ describe('schedule properties', () => {
           expect(e.maxPrice).toBeGreaterThan(FLOOR_Q96);
           expect(e.maxPrice).toBeLessThanOrEqual(cap);
           expect(e.maxPrice % TICK_SPACING).toBe(0n);
-          // floor + k * spacing, as the brief asks (the floor is itself a tick multiple)
+          // floor + k * spacing (the floor is itself a tick multiple)
           expect((e.maxPrice - FLOOR_Q96) % TICK_SPACING).toBe(0n);
         }
       }),
@@ -100,7 +100,7 @@ describe('simulation properties', () => {
   });
 
   it('unbounded demand above the cap at the start outbids the schedule: full refund', () => {
-    // Correction: the brief said "infinite demand fills fully at Pmax". Demand above your cap
+    // Correction to a common claim, "infinite demand fills fully at Pmax": demand above your cap
     // lifts clearing past every bid you placed, so you are outbid, not filled.
     fc.assert(
       fc.property(budgetArb, levelsArb, (budget, levels) => {

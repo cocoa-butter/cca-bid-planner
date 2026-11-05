@@ -6,7 +6,7 @@ contract. The engine is checked against the deployed bytecode by the differentia
 (`test/differential.test.ts`): 300 random auctions and 2,405 bids, with every fill and
 refund equal to the wei.
 
-Worked examples use the $SLOP figures from the project brief: 18-decimal token, 6-decimal
+Worked examples use illustrative $SLOP figures (unverified): 18-decimal token, 6-decimal
 USDC, floor 0.00889 USDC, supply 45,000,000. Those figures are **assumed**. They were not
 read from a chain.
 

@@ -54,7 +54,7 @@ describe('engine', () => {
   });
 
   it('an outbid bid fills while clearing was below its max, then refunds the rest', () => {
-    // Correction to the brief: "below the clearing price fill nothing" is wrong. Outbid
+    // A common misreading is that bids below the clearing price fill nothing. Outbid
     // bids keep what they bought before being outbid.
     const e = engine(0n);
     const low = e.submitBid(100n, FLOOR + 1n * SPACING, usdc(1_000n), 'low');

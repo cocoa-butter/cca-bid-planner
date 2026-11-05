@@ -44,7 +44,7 @@ export function tokensFor(amount: bigint, priceQ96: bigint): bigint {
  * Price at which `demand` (currency committed over the remaining schedule) exactly
  * buys `remainingSupply` tokens. Rounds up, like DemandLib.toPriceCeiling.
  *
- * Note: the brief described this as "the highest p that still clears" with floor
+ * Note: this is sometimes described as "the highest p that still clears" with floor
  * division. Upstream rounds up and then floors the result at the last fully
  * consumed tick, so the full clearing rule lives in engine.ts.
  */

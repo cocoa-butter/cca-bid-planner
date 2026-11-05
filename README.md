@@ -66,7 +66,7 @@ Risk checks
 
 `[obs]` means read from chain, `[der]` means computed with protocol math, and `[asm]` means the figure depends on an assumption.
 
-The samples here use `test/fixtures/demo-snapshot.json`. It is a **synthetic** auction built from the $SLOP figures in the project brief (floor 0.00889 USDC, 45M supply, 400k USDC minimum raise), with invented prior bids. It is not a chain read.
+The samples here use `test/fixtures/demo-snapshot.json`. It is a **synthetic** auction built from illustrative $SLOP figures (unverified) (floor 0.00889 USDC, 45M supply, 400k USDC minimum raise), with invented prior bids. It is not a chain read.
 
 ### `plan`
 

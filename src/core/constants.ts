@@ -38,7 +38,8 @@ export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as cons
 /**
  * MAX_BID_PRICE as computed by MaxBidPriceLib.maxBidPrice.
  *
- * Note: the project brief stated `min(2**160, 2**310 / totalSupply**2)`. Upstream is:
+ * Note: a commonly quoted form, `min(2**160, 2**310 / totalSupply**2)`, is not what
+ * upstream computes. Upstream is:
  * - totalSupply <= 2^62  -> 2^160 - 1
  * - otherwise            -> min((2^154 / totalSupply)^2, 2^222 / totalSupply)
  * with integer division applied before squaring.

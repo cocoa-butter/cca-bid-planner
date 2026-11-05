@@ -36,6 +36,8 @@ export interface ReadOptions {
   logChunk?: bigint;
   /** How far before startBlock to search for the AuctionCreated log. Default 500_000 blocks. */
   logLookback?: bigint;
+  /** Lowest block to search for the AuctionCreated log. Overrides logLookback. */
+  logFromBlock?: bigint;
   /** Hard cap on initialized ticks to read. Default 2000. */
   maxTicks?: number;
   onProgress?: (msg: string) => void;
@@ -264,26 +266,40 @@ async function findRequiredRaise(
   notes: string[],
 ): Promise<bigint> {
   if (opts.requiredCurrencyRaised !== undefined) {
-    notes.push('requiredCurrencyRaised taken from --required-raise');
+    notes.push(
+      'requiredCurrencyRaised taken from --required-raise; the auction was not matched to the v2 factory, so confirm it is a CCA v2 deployment',
+    );
     return opts.requiredCurrencyRaised;
   }
   // requiredCurrencyRaised has no view; it is in the factory's AuctionCreated configData.
+  // Auctions are created before they start, so search backwards from the start block.
   const chunk = opts.logChunk ?? 5000n;
-  const lookback = opts.logLookback ?? 500_000n;
   const top = startBlock < head ? startBlock : head;
-  const floor = top > lookback ? top - lookback : 0n;
+  const lookback = opts.logLookback ?? 500_000n;
+  const floor = opts.logFromBlock ?? (top > lookback ? top - lookback : 0n);
+  if (floor > top) {
+    throw new Error(
+      `--from-block ${floor} is after the auction start block ${top}; the auction is created before it starts`,
+    );
+  }
+  let refused = 0;
+  let lastError = '';
   for (let to = top; to >= floor; to -= chunk) {
     const from = to - chunk + 1n > floor ? to - chunk + 1n : floor;
     opts.onProgress?.(`searching AuctionCreated in blocks ${from}-${to}`);
-    const logs = await client
-      .getLogs({
+    let logs: Awaited<ReturnType<typeof client.getLogs<typeof auctionCreatedEvent>>> = [];
+    try {
+      logs = await client.getLogs({
         address: CCA_FACTORY_ADDRESS,
         event: auctionCreatedEvent,
         args: { auction },
         fromBlock: from,
         toBlock: to,
-      })
-      .catch(() => []);
+      });
+    } catch (e) {
+      refused += 1;
+      lastError = e instanceof BaseError ? e.shortMessage : String(e);
+    }
     const log = logs[0];
     if (log?.args.configData) {
       const params = decodeParams(log.args.configData);
@@ -292,8 +308,12 @@ async function findRequiredRaise(
     }
     if (from === floor) break;
   }
+  const why =
+    refused > 0
+      ? ` The RPC refused ${refused} log request(s) (last error: ${lastError}); try --log-chunk with a smaller range or another RPC.`
+      : ` Searched blocks ${floor}-${top}; widen with --from-block or --log-lookback.`;
   throw new Error(
-    'requiredCurrencyRaised not found in factory logs; pass --required-raise <raw amount> (it has no on-chain view)',
+    `requiredCurrencyRaised not found in v2 factory logs.${why} Or pass --required-raise <raw amount> (it has no on-chain view).`,
   );
 }
 

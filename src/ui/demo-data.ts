@@ -1,6 +1,6 @@
 /**
  * A synthetic, clearly-labelled example auction for the demo page and docs. It reuses the
- * $SLOP figures from the project brief (floor 0.00889 USDC, 45M supply, 400k USDC minimum
+ * illustrative $SLOP figures (floor 0.00889 USDC, 45M supply, 400k USDC minimum
  * raise). Those figures are assumptions, not a chain read. Prior bids are invented.
  */
 import { maxBidPrice } from '../core/constants.js';

@@ -16,10 +16,10 @@ import {
 } from '../src/core/price.js';
 import { CAP_Q96, FLOOR_Q96_EXACT, MIN_RAISE, SUPPLY } from './fixtures/slop.js';
 
-describe('brief vectors', () => {
+describe('reference vectors', () => {
   it('Q96 round trip: 0.00889 USDC (6 dp) per 18-dp token', () => {
     // priceQ96 = 0.00889 * 2^96 * 10^(6-18) = 889 * 2^96 / 10^17.
-    // The brief wrote 889n * 2n**96n / 10n**12n, which is 10^5 too large.
+    // 889n * 2n**96n / 10n**12n, a commonly quoted form, is 10^5 too large.
     const q = toPriceQ96('0.00889', 18, 6);
     expect(q).toBe((889n * 2n ** 96n) / 10n ** 17n);
     expect(q).not.toBe((889n * 2n ** 96n) / 10n ** 12n);
@@ -28,7 +28,7 @@ describe('brief vectors', () => {
   });
 
   it('SLOP: a full sale at the floor raises at least the minimum', () => {
-    // 45e6 * 0.00889 = 400,050 USDC, not exactly 400,000 as the brief said.
+    // 45e6 * 0.00889 = 400,050 USDC, not exactly 400,000.
     expect(45_000_000 * 0.00889).toBeCloseTo(400_050, 6);
     const raised = mulDivUp(SUPPLY, FLOOR_Q96_EXACT, Q96);
     expect(raised).toBeGreaterThanOrEqual(MIN_RAISE);

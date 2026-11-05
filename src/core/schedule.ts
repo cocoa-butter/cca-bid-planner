@@ -10,7 +10,7 @@ import { nextTickAbove } from './price.js';
  * - top:    more weight at higher prices (stay filled if demand is strong)
  * - bottom: more weight at lower prices (pay less if demand is weak)
  *
- * The brief called these "front-loaded" and "back-loaded". Here they refer to price,
+ * These are sometimes called "front-loaded" and "back-loaded". Here they refer to price,
  * not time: CCA already rewards bidding early, so every entry is placed at the same block.
  */
 export type Weighting = 'flat' | 'top' | 'bottom';

@@ -51,6 +51,9 @@ Source (one of)
 Common options
   --block <n>             Read state at block n (RPC) / submit at block n (plan)
   --required-raise <raw>  requiredCurrencyRaised in raw units, if factory logs are unavailable
+  --from-block <n>        Lowest block to search for the AuctionCreated log
+  --log-lookback <n>      Blocks before the start block to search (default 500000)
+  --log-chunk <n>         Max blocks per eth_getLogs request (default 5000)
   --json                  Machine-readable output
   -h, --help              Show help
 
@@ -137,6 +140,13 @@ async function loadSnapshot(args: ParsedArgs, io: Io): Promise<AuctionSnapshot> 
   const { snapshot, notes } = await readSnapshot(clientFor(rpc), getAddress(auction), {
     ...(block && args.command === 'inspect' ? { blockNumber: BigInt(block) } : {}),
     ...(req ? { requiredCurrencyRaised: BigInt(req) } : {}),
+    ...(flag(args, 'from-block')
+      ? { logFromBlock: BigInt(flag(args, 'from-block') as string) }
+      : {}),
+    ...(flag(args, 'log-lookback')
+      ? { logLookback: BigInt(flag(args, 'log-lookback') as string) }
+      : {}),
+    ...(flag(args, 'log-chunk') ? { logChunk: BigInt(flag(args, 'log-chunk') as string) } : {}),
     ...(quiet ? {} : { onProgress: (m: string) => io.err(`  ${m}`) }),
   });
   if (!quiet) for (const n of notes) io.err(`note: ${n}`);
