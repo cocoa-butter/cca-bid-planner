@@ -52,6 +52,7 @@
     "dev:site": "npm run build:site && npx --yes serve site-dist"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
     "viem": "2.57.16"
   },
   "devDependencies": {

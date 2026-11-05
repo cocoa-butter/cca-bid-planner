@@ -176,6 +176,7 @@ for (const pre of document.querySelectorAll('pre')) {
   pre.appendChild(b);
 }
 </script>
+<script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
 </body>
 </html>
 `;
